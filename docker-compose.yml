@@ -1,0 +1,77 @@
+services:
+  wordpress:
+    image: wordpress:php8.2-apache
+    container_name: docpilot_shop_app
+    restart: unless-stopped
+
+    depends_on:
+      - db
+
+    ports:
+      - "127.0.0.1:8080:80"
+
+    environment:
+      WORDPRESS_DB_HOST: db:3306
+      WORDPRESS_DB_NAME: wpdb
+      WORDPRESS_DB_USER: wpuser
+      WORDPRESS_DB_PASSWORD: wppass
+
+    read_only: true
+    tmpfs:
+      - /tmp
+      - /run
+
+    volumes:
+      - docpilot_shop_data:/var/www/html
+      - ./wp-php.ini:/usr/local/etc/php/conf.d/zzz-wp.ini:ro
+
+    networks:
+      - docpilot_shop_net
+
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+    security_opt:
+      - no-new-privileges:true
+
+    deploy:
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+  db:
+    image: mariadb:10.11
+    container_name: docpilot_shop_db
+    restart: unless-stopped
+
+    environment:
+      MYSQL_DATABASE: wpdb
+      MYSQL_USER: wpuser
+      MYSQL_PASSWORD: wppass
+      MYSQL_ROOT_PASSWORD: rootpass
+
+    volumes:
+      - docpilot_shop_db:/var/lib/mysql
+
+    networks:
+      - docpilot_shop_net
+
+    cap_drop:
+      - ALL
+    cap_add:
+      - SETGID
+      - SETUID
+      - DAC_OVERRIDE
+    security_opt:
+      - no-new-privileges:true
+
+volumes:
+  docpilot_shop_data:
+  docpilot_shop_db:
+
+networks:
+  docpilot_shop_net:
+    driver: bridge
