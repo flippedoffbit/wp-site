@@ -5,10 +5,17 @@
 
 set -e
 
+# Load environment variables
+if [ -f .env ]; then
+    export $(cat .env | grep -v '^#' | xargs)
+else
+    echo "Warning: .env file not found. Using defaults or environment variables."
+fi
+
 COMPOSE_FILE="docker-compose.yml"
 PROJECT_NAME="wp-site"
 BACKUP_DIR="./backups"
-NGINX_VHOST="/etc/nginx/sites-available/shop.docpilot.in"
+NGINX_VHOST="/etc/nginx/sites-available/${DOMAIN:-shop.docpilot.in}"
 
 # Colors for output
 RED='\033[0;31m'
@@ -126,7 +133,7 @@ backup() {
     
     # Backup database
     log_info "Backing up database..."
-    docker exec docpilot_shop_db mysqldump -u wpuser -pwppass wpdb > "$BACKUP_FILE"
+    docker exec docpilot_shop_db mysqldump -u "${MYSQL_USER:-wpuser}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE:-wpdb}" > "$BACKUP_FILE"
     
     if [ -f "$BACKUP_FILE" ]; then
         log_info "Database backup created: $BACKUP_FILE"
@@ -174,7 +181,7 @@ restore() {
     fi
     
     log_info "Restoring database..."
-    gunzip -c "$BACKUP_FILE" | docker exec -i docpilot_shop_db mysql -u wpuser -pwppass wpdb
+    gunzip -c "$BACKUP_FILE" | docker exec -i docpilot_shop_db mysql -u "${MYSQL_USER:-wpuser}" -p"${MYSQL_PASSWORD}" "${MYSQL_DATABASE:-wpdb}"
     
     log_info "Restore complete!"
 }
@@ -227,7 +234,7 @@ setup_ssl() {
     fi
     
     # Check if nginx config exists
-    if [ ! -f "/etc/nginx/sites-enabled/shop.docpilot.in" ]; then
+    if [ ! -f "/etc/nginx/sites-enabled/${DOMAIN:-shop.docpilot.in}.conf" ] && [ ! -f "/etc/nginx/sites-enabled/${DOMAIN:-shop.docpilot.in}" ]; then
         log_error "Nginx vhost not found in /etc/nginx/sites-enabled/"
         log_info "Please run: sudo cp shop.docpilot.in.conf /etc/nginx/sites-available/"
         log_info "Then: sudo ln -s /etc/nginx/sites-available/shop.docpilot.in.conf /etc/nginx/sites-enabled/"

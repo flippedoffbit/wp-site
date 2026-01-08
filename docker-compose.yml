@@ -12,9 +12,11 @@ services:
 
     environment:
       WORDPRESS_DB_HOST: db:3306
-      WORDPRESS_DB_NAME: wpdb
-      WORDPRESS_DB_USER: wpuser
-      WORDPRESS_DB_PASSWORD: wppass
+      WORDPRESS_DB_NAME: ${MYSQL_DATABASE:-wpdb}
+      WORDPRESS_DB_USER: ${MYSQL_USER:-wpuser}
+      WORDPRESS_DB_PASSWORD: ${MYSQL_PASSWORD:?Please set MYSQL_PASSWORD in .env file}
+      WORDPRESS_CONFIG_EXTRA: |
+        define('FS_METHOD', 'direct');
 
     read_only: true
     tmpfs:
@@ -48,10 +50,10 @@ services:
     restart: unless-stopped
 
     environment:
-      MYSQL_DATABASE: wpdb
-      MYSQL_USER: wpuser
-      MYSQL_PASSWORD: wppass
-      MYSQL_ROOT_PASSWORD: rootpass
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-wpdb}
+      MYSQL_USER: ${MYSQL_USER:-wpuser}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:?Please set MYSQL_PASSWORD in .env file}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Please set MYSQL_ROOT_PASSWORD in .env file}
 
     volumes:
       - docpilot_shop_db:/var/lib/mysql
